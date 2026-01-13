@@ -32,7 +32,7 @@ description: 使用本地 Qt 工具链（qmake 或 CMake）编译、构建和调
 ### 2. 项目配置与生成
 - **对于文本编码**：
   - 确保项目文件使用 UTF-8 编码，避免因编码问题导致的编译错误。
-  - 在WIndows下，要在头文件中增加 `#pragma execution_character_set("utf-8")` 来确保源文件以 UTF-8 编码编译。
+  - 在Windows下，要在头文件中增加 `#pragma execution_character_set("utf-8")` 来确保源文件以 UTF-8 编码编译。
 - **对于 qmake 项目**：
   1. **创建构建目录**：在项目根目录下创建 `build/<Qt版本号>_<Release或Debug>` 目录（例如 `build/5.15.2_Debug`）。如果目录已存在，直接使用。
   2. **在 Windows PowerShell 中运行 qmake**：
@@ -66,15 +66,40 @@ description: 使用本地 Qt 工具链（qmake 或 CMake）编译、构建和调
   ```powershell
   $env:PATH = "D:\Qt5.15\5.15.2\msvc2019_64\bin;" + $env:PATH
   ```
+- **处理第三方库依赖**：
+  1. **从 .pro 文件中提取库路径**：检查 `.pro` 文件中的 `LIBS` 配置，识别第三方库的路径。
+     - 例如：`LIBS += -L/root/Desktop/robot/rttr/build/install` 或 `LIBS += -LD:\libs\opencv\build\x64\vc16\lib`
+  2. **确定动态库位置**：第三方库的动态库文件（.dll 或 .so）通常位于：
+     - `-L` 参数指定的目录本身
+     - 或该目录下的 `bin/` 子目录
+     - 例如：`D:\libs\opencv\build\x64\vc16\lib` → 动态库可能在 `D:\libs\opencv\build\x64\vc16\bin`
+  3. **添加到 PATH 环境变量**：
+     ```powershell
+     # Windows PowerShell 示例
+     $env:PATH = "D:\Qt5.15\5.15.2\msvc2019_64\bin;D:\libs\opencv\build\x64\vc16\bin;D:\libs\assimp\bin;" + $env:PATH
+     ```
+     ```bash
+     # Linux/macOS 示例
+     export LD_LIBRARY_PATH=/usr/local/lib:/opt/opencv/lib:$LD_LIBRARY_PATH
+     ```
+  4. **自动识别策略**：
+     - 解析 `.pro` 文件中所有 `LIBS += -L<path>` 条目
+     - 对于每个路径，检查该路径及其 `../bin` 或 `./bin` 子目录是否存在动态库文件
+     - 将找到的路径添加到 `PATH`（Windows）或 `LD_LIBRARY_PATH`（Linux）环境变量
 - **运行可执行文件**：进入构建目录的 `release/` 或 `debug/` 子目录，运行生成的 `.exe` 文件。
   **示例**：
   ```powershell
   cd e:\project\build\5.15.2_Debug\release
   .\project.exe
   ```
-- **完整运行命令**：
+- **完整运行命令（包含第三方库）**：
   ```powershell
-  $env:PATH = "D:\Qt5.15\5.15.2\msvc2019_64\bin;" + $env:PATH; cd <构建目录>\release; .\<应用名>.exe
+  # Windows PowerShell
+  $env:PATH = "D:\Qt5.15\5.15.2\msvc2019_64\bin;D:\libs\opencv\build\x64\vc16\bin;D:\libs\assimp\bin;" + $env:PATH; cd <构建目录>\release; .\<应用名>.exe
+  ```
+  ```bash
+  # Linux
+  export LD_LIBRARY_PATH=/opt/Qt/5.15.2/gcc_64/lib:/usr/local/opencv/lib:$LD_LIBRARY_PATH && cd <构建目录> && ./<应用名>
   ```
 
 ### 5. 调试支持
@@ -120,6 +145,14 @@ description: 使用本地 Qt 工具链（qmake 或 CMake）编译、构建和调
 2.  **“头文件找不到”**：检查 `.pro` 文件中的 `INCLUDEPATH` 或 CMake 中的 `include_directories()`。
 3.  **“库链接失败”**：检查 `.pro` 中的 `LIBS` 或 CMake 中的 `target_link_libraries()`，确保链接了正确的 Qt 模块（如 `-lQt5Core -lQt5Gui`）。
 4.  **“程序启动崩溃”**：建议使用调试器获取堆栈跟踪。常见原因包括：插件路径不正确（设置 `QT_DEBUG_PLUGINS=1` 环境变量）、二进制与动态库版本不匹配。
-5.  **“UI 文件未编译”**：确保 `.pro` 文件包含 `FORMS += mydialog.ui`，或 CMake 中使用了 `qt_wrap_ui()`。6.  **"Cannot run compiler 'cl'"**：这是因为 MSVC 编译器环境未初始化。必须在同一个命令会话中先运行 `vcvarsall.bat`，然后再运行 qmake 或编译命令。使用 `cmd /c` 确保所有命令在同一个会话中执行。
+5.  **"UI 文件未编译"**：确保 `.pro` 文件包含 `FORMS += mydialog.ui`，或 CMake 中使用了 `qt_wrap_ui()`。
+6.  **"Cannot run compiler 'cl'"**：这是因为 MSVC 编译器环境未初始化。必须在同一个命令会话中先运行 `vcvarsall.bat`，然后再运行 qmake 或编译命令。使用 `cmd /c` 确保所有命令在同一个会话中执行。
 7.  **"找不到 Qt5Core.dll"**：运行时缺少 Qt 动态库。需要将 Qt 的 `bin` 目录添加到 `PATH` 环境变量中，或者将所需 DLL 复制到可执行文件目录。
+8.  **"找不到第三方库的 DLL"**（如 opencv_world455.dll、assimp.dll 等）：
+    - 从 `.pro` 文件的 `LIBS += -L<path>` 中提取库路径
+    - 检查该路径或其 `bin/` 子目录是否包含所需的动态库文件
+    - 将动态库路径添加到 `PATH` 环境变量（Windows）或 `LD_LIBRARY_PATH`（Linux）
+    - 或将动态库文件复制到可执行文件所在目录
+9.  **"程序运行时出现 0xc000007b 错误"**：通常是 32 位/64 位混用问题。确保 Qt、编译器、第三方库的架构（x86/x64）保持一致。
+
 始终以清晰、分步骤的方式向用户解释流程和命令，并在执行任何可能修改文件的命令前获得用户确认。
