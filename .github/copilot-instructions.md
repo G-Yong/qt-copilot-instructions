@@ -72,7 +72,7 @@ description: 使用本地 Qt 工具链（qmake 或 CMake）编译、构建和调
   2. **确定动态库位置**：第三方库的动态库文件（.dll 或 .so）通常位于：
      - `-L` 参数指定的目录本身
      - 或该目录下的 `bin/` 子目录
-     - 例如：`D:\libs\opencv\build\x64\vc16\lib` → 动态库可能在 `D:\libs\opencv\build\x64\vc16\bin`
+     - 例如：`D:\libs\opencv\build\x64\vc16\lib` → 动态库可能在 `D:\libs\opencv\build\x64\vc16\bin` 或者 `D:\libs\opencv\build\x64\vc16\lib`
   3. **添加到 PATH 环境变量**：
      ```powershell
      # Windows PowerShell 示例
