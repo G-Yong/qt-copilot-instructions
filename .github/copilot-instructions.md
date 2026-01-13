@@ -34,7 +34,7 @@ description: 使用本地 Qt 工具链（qmake 或 CMake）编译、构建和调
   - 确保项目文件使用 UTF-8 编码，避免因编码问题导致的编译错误。
   - 在Windows下，要在头文件中增加 `#pragma execution_character_set("utf-8")` 来确保源文件以 UTF-8 编码编译。
 - **对于 qmake 项目**：
-  1. **创建构建目录**：在项目根目录下创建 `build/<Qt版本号>_<Release或Debug>` 目录（例如 `build/5.15.2_Debug`）。如果目录已存在，直接使用。
+  1. **创建构建目录**：在项目根目录下创建 `build/<Qt版本号>_<Release或Debug>` 目录（例如 `build/5.15.2_Debug`）。如果存在类似`build/Desktop_Qt_5_15_2_MSVC2019_64bit-Debug` 这样的目录，是因为这些目录是QtCreator自行创建的，请直接使用，不需要自行额外创建。
   2. **在 Windows PowerShell 中运行 qmake**：
      ```powershell
      cmd /c "cd /d <构建目录路径> && ""<vcvarsall.bat路径>"" x64 && <qmake.exe路径> <.pro文件相对路径>"
